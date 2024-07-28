@@ -1,54 +1,46 @@
 package com.power.project.controller;
 
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.power.project.dto.InventoryStockDto;
+import com.power.project.dto.SearchRequest;
+import com.power.project.entity.CastingYardData;
+import com.power.project.service.CastingYardServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class MainController {
 
-    @PostMapping("/upload")
-    public String handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
-            return "Please upload a valid CSV file.";}
-        Reader reader = new InputStreamReader(file.getInputStream());
-        List<CSVRecord> records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader).getRecords();
-        return generateHtmlTable(records);
+    @Autowired
+    private CastingYardServiceImpl castingYardService;
+
+    @PostMapping("/api/entities/upload")
+    public List<CastingYardData> handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException {
+        if (file.isEmpty())
+            throw new RuntimeException("File is empty...");
+        castingYardService.writeIntoDB(file);
+        List<CastingYardData> allEntities = castingYardService.getAllEntities();
+        return allEntities.stream().sorted(Comparator.comparing(CastingYardData::getId)).collect(Collectors.toList());
     }
 
-    private String generateHtmlTable(List<CSVRecord> records) {
-        StringBuilder html = new StringBuilder();
-        html.append("<table class=\"table\">")
-                .append("<thead><tr>");
-        if (!records.isEmpty()) {
-            CSVRecord header = records.get(0);
-            for (String column : header.toMap().keySet()) {
-                html.append("<th>").append(column).append("</th>");
-            }
-            html.append("</tr></thead><tbody>");
-        }
-        for (CSVRecord record : records) {
-            html.append("<tr>");
-            for (String value : record) {
-                html.append("<td>").append(value).append("</td>");
-            }
-            html.append("</tr>");
-        }
-        html.append("</tbody></table>");
-        return html.toString();
+    @PostMapping("/api/search")
+    public List<CastingYardData> searchRecords(@RequestBody SearchRequest searchRequest) {
+        String searchRequestId = searchRequest.getId();
+        LocalDate fromDate = searchRequest.getFromDate();
+        LocalDate toDate = searchRequest.getToDate();
+        return castingYardService.searchRecords(searchRequestId, fromDate, toDate);
+    }
+
+    @GetMapping("api/inventorySearch")
+    public List<InventoryStockDto> searchInventoryStock(@RequestParam("searchId") String searchId) {
+        List<InventoryStockDto> castingYardData = castingYardService.searchByFamilyType(searchId);
+        return castingYardData;
     }
 }

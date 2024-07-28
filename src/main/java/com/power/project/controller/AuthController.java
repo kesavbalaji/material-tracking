@@ -2,10 +2,7 @@ package com.power.project.controller;
 
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("")
@@ -24,5 +21,25 @@ public class AuthController {
     @RequestMapping(value = "/uploads",method = RequestMethod.GET)
     public String upload(){
         return "upload";
+    }
+
+    @GetMapping("/entities")
+    public String getEntitiesPage() {
+        return "tableEntity";
+    }
+
+    @GetMapping("/segmentHistory")
+    public String segmentHistoryForm() {
+        return "segmentHistory";
+    }
+
+    @GetMapping("/inventoryStock")
+    public String inventoryStockForm() {
+        return "inventoryStock";
+    }
+
+    @GetMapping("/homePage")
+    public String homePage() {
+        return "homePage";
     }
 }
